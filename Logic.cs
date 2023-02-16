@@ -12,8 +12,17 @@ internal class Logic
 		var userCredentials = new TwitterCredentials(consumerKey, consumerKeySecret, accessToken, accessTokenSecret);
 		var appClient = new TwitterClient(userCredentials);
 
-		var authenticatedUser = await appClient.Users.GetAuthenticatedUserAsync();
-		Console.WriteLine($"Authenticated as {authenticatedUser.ScreenName}");
+		IAuthenticatedUser authenticatedUser;
+		try {
+			authenticatedUser = await appClient.Users.GetAuthenticatedUserAsync();
+			Console.WriteLine($"Authenticated as {authenticatedUser.ScreenName}");
+		}
+		catch (TwitterAuthException e)
+		{
+			Console.WriteLine("Couldn't authenticate. Please check whether the API is still online and if so, make sure your API keys are correct.");
+			Console.WriteLine(e);
+			return;
+		}
 
 		Console.WriteLine("Preparing to retrieve tweets…");
 		var timelineTweets = new List<ITweet>();
@@ -78,10 +87,11 @@ internal class Logic
 				await tweet.DestroyAsync();
 				Console.WriteLine("❌ Deleted.");
 			}
-			catch (TwitterException ex)
+			catch (TwitterException e)
 			{
 				Console.WriteLine("An error occurred trying to delete this tweet.");
-				Console.WriteLine(ex);
+				Console.WriteLine(e);
+				return;
 			}
 		}
 	}

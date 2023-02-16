@@ -54,6 +54,18 @@ root.AddOption(goAheadOption);
 
 root.SetHandler(async (consumerKey, consumerKeySecret, accessToken, accessTokenSecret, maxTweetAge, goAhead) =>
 	{
+		if (consumerKey.Trim() == "")
+			consumerKey = InputStuff.InputString("Please enter your API consumer key:");
+
+		if (consumerKeySecret.Trim() == "")
+			consumerKeySecret = InputStuff.InputString("Please enter your API consumer key secret:");
+
+		if (accessToken.Trim() == "")
+			accessToken = InputStuff.InputString("Please enter your API access token:");
+
+		if (accessTokenSecret.Trim() == "")
+			accessTokenSecret = InputStuff.InputString("Please enter your API access token secret:");
+
 		if (maxTweetAge < 0)
 			maxTweetAge = InputStuff.InputInt("Please enter the maximum age (in days) of tweets that should be kept. Enter 0 to delete all tweets.", 0);
 
