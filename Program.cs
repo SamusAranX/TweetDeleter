@@ -1,4 +1,5 @@
 ﻿using System.CommandLine;
+using System.Reflection;
 using System.Text;
 using TweetDeleter;
 
@@ -12,25 +13,29 @@ var root = new RootCommand
 
 var consumerKeyOption = new Option<string>(
 	"--consumer-key",
-	"Your API consumer key. Also called 'API key' by Twitter."
+	description: "Your API consumer key. Also called 'API key' by Twitter.",
+	getDefaultValue: () => ""
 );
 consumerKeyOption.AddAlias("-c");
 
 var consumerSecretOption = new Option<string>(
 	"--consumer-secret",
-	"Your API consumer secret. Also called 'API secret key' by Twitter."
+	description: "Your API consumer secret. Also called 'API secret key' by Twitter.",
+	getDefaultValue: () => ""
 );
 consumerSecretOption.AddAlias("-C");
 
 var accessTokenOption = new Option<string>(
 	"--access-token",
-	"Your API access token."
+	description: "Your API access token.",
+	getDefaultValue: () => ""
 );
 accessTokenOption.AddAlias("-a");
 
 var accessTokenSecretOption = new Option<string>(
 	"--access-token-secret",
-	"Your API access token secret."
+	description: "Your API access token secret.",
+	getDefaultValue: () => ""
 );
 accessTokenSecretOption.AddAlias("-A");
 
@@ -54,6 +59,11 @@ root.AddOption(goAheadOption);
 
 root.SetHandler(async (consumerKey, consumerKeySecret, accessToken, accessTokenSecret, maxTweetAge, goAhead) =>
 	{
+		var versionString = $"TweetDeleter v{Assembly.GetEntryAssembly().GetName().Version}";
+		Console.WriteLine(versionString);
+		Console.WriteLine(new string('-', versionString.Length));
+		Console.WriteLine();
+
 		if (consumerKey.Trim() == "")
 			consumerKey = InputStuff.InputString("Please enter your API consumer key:");
 
