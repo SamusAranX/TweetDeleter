@@ -399,3 +399,6 @@ FodyWeavers.xsd
 
 # launch settings
 launchSettings.json
+
+# API keys
+/*.keys
