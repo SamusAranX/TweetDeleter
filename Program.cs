@@ -59,7 +59,7 @@ root.AddOption(goAheadOption);
 
 root.SetHandler(async (consumerKey, consumerKeySecret, accessToken, accessTokenSecret, maxTweetAge, goAhead) =>
 	{
-		var versionString = $"TweetDeleter v{Assembly.GetEntryAssembly().GetName().Version}";
+		var versionString = $"TweetDeleter v{Assembly.GetEntryAssembly()!.GetName().Version}";
 		Console.WriteLine(versionString);
 		Console.WriteLine(new string('-', versionString.Length));
 		Console.WriteLine();

@@ -24,31 +24,33 @@ internal class Logic
 			return;
 		}
 
-		Console.WriteLine("Preparing to retrieve tweets…");
+		Console.WriteLine("Retrieving all tweets…");
 		var timelineTweets = new List<ITweet>();
 		var timelineIterator = appClient.Timelines.GetUserTimelineIterator(authenticatedUser.ScreenName);
 
-		Console.WriteLine("Retrieving tweets…");
 		while (!timelineIterator.Completed)
 		{
 			var page = await timelineIterator.NextPageAsync();
 			timelineTweets.AddRange(page);
-			Console.WriteLine($"Retrieved {timelineTweets.Count} tweets…");
+
+			Console.WriteLine("Adding tweets to list…");
 		}
 
 		Console.WriteLine("All done.");
 
+		timelineTweets = timelineTweets.FindAll(t => t.CreatedAt.LocalDateTime < deleteBeforeDate);
+
 		if (timelineTweets.Count == 0)
 		{
-			Console.WriteLine("There are no tweets to delete.");
+			Console.WriteLine("There are no tweets that are old enough to be deleted. If there are still older tweets on your profile, you might have to delete them manually. Twitter doesn't allow going that far back with the API.");
 			return;
 		}
 
 		var earliestTweet = timelineTweets.Last();
 		if (timelineTweets.Count == 1)
-			Console.WriteLine("Retrieved one tweet:");
+			Console.WriteLine("Found one deletable tweet:");
 		else
-			Console.WriteLine($"Retrieved a total of {timelineTweets.Count} tweets, with the earliest being this one:");
+			Console.WriteLine($"Found a total of {timelineTweets.Count} deletable tweets, with the earliest being this one:");
 
 		Console.WriteLine($"{earliestTweet.CreatedAt.LocalDateTime}: {earliestTweet.FullText}");
 		Console.WriteLine();
@@ -76,16 +78,21 @@ internal class Logic
 
 		foreach (var tweet in timelineTweets)
 		{
-			if (tweet.CreatedAt.LocalDateTime >= deleteBeforeDate)
-				continue;
-
 			Console.WriteLine();
 			Console.WriteLine($"{tweet.CreatedAt.LocalDateTime}: {tweet.FullText}");
 
 			try
 			{
-				await tweet.DestroyAsync();
-				Console.WriteLine("❌ Deleted.");
+				if (tweet.IsRetweet)
+				{
+					await tweet.DestroyRetweetAsync();
+					Console.WriteLine("🔁❌ Deleted Retweet.");
+				}
+				else
+				{
+					await tweet.DestroyAsync();
+					Console.WriteLine("💬❌ Deleted Tweet.");
+				}
 			}
 			catch (TwitterException e)
 			{
@@ -94,5 +101,7 @@ internal class Logic
 				return;
 			}
 		}
+
+		Console.WriteLine("Deleted everything there was to delete.");
 	}
 }
