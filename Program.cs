@@ -54,7 +54,7 @@ tweetListFileOption.AddAlias("-t");
 
 var onlyTweetListOption = new Option<bool>(
 	"--only-tweet-list",
-	description: "Only process the tweet list.",
+	description: "Skip the normal deletion method and only process the tweet list.",
 	getDefaultValue: () => false
 );
 onlyTweetListOption.AddAlias("-T");
