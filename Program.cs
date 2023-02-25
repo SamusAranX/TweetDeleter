@@ -45,6 +45,20 @@ var maxTweetAgeOption = new Option<int>(
 	getDefaultValue: () => -1
 );
 
+var tweetListFileOption = new Option<string>(
+	"--tweet-list",
+	description: "A file with tweet IDs separated by newlines.",
+	getDefaultValue: () => ""
+);
+tweetListFileOption.AddAlias("-t");
+
+var onlyTweetListOption = new Option<bool>(
+	"--only-tweet-list",
+	description: "Only process the tweet list.",
+	getDefaultValue: () => false
+);
+onlyTweetListOption.AddAlias("-T");
+
 var goAheadOption = new Option<bool>(
 	"-y",
 	"Specify this to skip all 'Are you sure?' questions."
@@ -55,9 +69,13 @@ root.AddOption(consumerSecretOption);
 root.AddOption(accessTokenOption);
 root.AddOption(accessTokenSecretOption);
 root.AddOption(maxTweetAgeOption);
+
+root.AddOption(tweetListFileOption);
+root.AddOption(onlyTweetListOption);
+
 root.AddOption(goAheadOption);
 
-root.SetHandler(async (consumerKey, consumerKeySecret, accessToken, accessTokenSecret, maxTweetAge, goAhead) =>
+root.SetHandler(async (consumerKey, consumerKeySecret, accessToken, accessTokenSecret, maxTweetAge, tweetIDListFile, onlyTweetList, goAhead) =>
 	{
 		var versionString = $"TweetDeleter v{Assembly.GetEntryAssembly()!.GetName().Version}";
 		Console.WriteLine(versionString);
@@ -76,6 +94,9 @@ root.SetHandler(async (consumerKey, consumerKeySecret, accessToken, accessTokenS
 		if (accessTokenSecret.Trim() == "")
 			accessTokenSecret = InputStuff.InputString("Please enter your API access token secret:");
 
+		var deleter = new Deleter(consumerKey, consumerKeySecret, accessToken, accessTokenSecret);
+		await deleter.Authenticate(); // will throw if login fails
+
 		if (maxTweetAge < 0)
 			maxTweetAge = InputStuff.InputInt("Please enter the maximum age (in days) of tweets that should be kept. Enter 0 to delete all tweets.", 0);
 
@@ -93,17 +114,26 @@ root.SetHandler(async (consumerKey, consumerKeySecret, accessToken, accessTokenS
 
 		Console.WriteLine();
 
-		if (!goAhead)
+		if (!onlyTweetList)
 		{
-			Console.WriteLine("Does this look right to you? Press Enter to continue.");
-			if (Console.ReadKey().Key != ConsoleKey.Enter)
-				return;
 
-			Console.WriteLine();
+			if (!goAhead)
+			{
+				Console.WriteLine("Does this look right to you? Press Enter to continue.");
+				if (Console.ReadKey().Key != ConsoleKey.Enter)
+					return;
+
+				Console.WriteLine();
+			}
+
+			await deleter.DeleteTweets(deleteBeforeDate, goAhead);
 		}
 
-		await Logic.DeleteTweets(consumerKey, consumerKeySecret, accessToken, accessTokenSecret, deleteBeforeDate, goAhead);
+		if (tweetIDListFile != "")
+		{
+			await deleter.DeleteTweetList(tweetIDListFile, deleteBeforeDate, goAhead);
+		}
 	},
-	consumerKeyOption, consumerSecretOption, accessTokenOption, accessTokenSecretOption, maxTweetAgeOption, goAheadOption);
+	consumerKeyOption, consumerSecretOption, accessTokenOption, accessTokenSecretOption, maxTweetAgeOption, tweetListFileOption, onlyTweetListOption, goAheadOption);
 
 return await root.InvokeAsync(args);
