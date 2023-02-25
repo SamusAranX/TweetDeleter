@@ -116,7 +116,6 @@ root.SetHandler(async (consumerKey, consumerKeySecret, accessToken, accessTokenS
 
 		if (!onlyTweetList)
 		{
-
 			if (!goAhead)
 			{
 				Console.WriteLine("Does this look right to you? Press Enter to continue.");
@@ -130,9 +129,7 @@ root.SetHandler(async (consumerKey, consumerKeySecret, accessToken, accessTokenS
 		}
 
 		if (tweetIDListFile != "")
-		{
 			await deleter.DeleteTweetList(tweetIDListFile, deleteBeforeDate, goAhead);
-		}
 	},
 	consumerKeyOption, consumerSecretOption, accessTokenOption, accessTokenSecretOption, maxTweetAgeOption, tweetListFileOption, onlyTweetListOption, goAheadOption);
 

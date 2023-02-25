@@ -6,6 +6,8 @@ First, you'll need a full set of API keys. Then, grab the newest release, run it
 
 You can also put a bunch of tweet IDs into a text file, separated by newlines, and use this tool to delete *just* those tweets.
 
+Note that by necessity, this tool sends a lot of API requests, so if there's a lot of tweets to delete, you may run into the request limit. If you do, just wait a bit and run it again.
+
 ### I want details!
 
 Fine. You can also run this from the command line and specify your keys like this:

@@ -1,4 +1,5 @@
 ﻿using Tweetinvi;
+using Tweetinvi.Core.Exceptions;
 using Tweetinvi.Exceptions;
 using Tweetinvi.Models;
 using Tweetinvi.Parameters;
@@ -51,6 +52,33 @@ internal class Deleter
 			return;
 
 		Console.WriteLine();
+	}
+
+	/// <summary>
+	/// A centralized function that handles exceptions thrown by API methods.
+	/// </summary>
+	/// <param name="e">The TwitterException that was thrown.</param>
+	/// <param name="tweetID">
+	/// The ID of the tweet this exception was thrown for. This is printed in case the error is a Not
+	/// Found error.
+	/// </param>
+	/// <returns>A boolean that signifies whether to exit or not.</returns>
+	private static bool HandleTwitterException(ITwitterException e, long tweetID)
+	{
+		switch (e.StatusCode)
+		{
+			case 404:
+				Console.WriteLine($"{tweetID}: ❌ Not found");
+				break;
+			case 429:
+				Console.WriteLine("⚠️ Too many requests! Please wait a bit before running this tool again.");
+				return true;
+			default:
+				Console.WriteLine(e);
+				break;
+		}
+
+		return false;
 	}
 
 	public async Task DeleteTweets(DateTime deleteBeforeDate, bool goAhead)
@@ -116,19 +144,19 @@ internal class Deleter
 				if (tweet.IsRetweet)
 				{
 					await tweet.DestroyRetweetAsync();
-					Console.WriteLine("🔁🗑 Deleted Retweet.");
+					Console.WriteLine("🔁🚮 Deleted Retweet.");
 				}
 				else
 				{
 					await tweet.DestroyAsync();
-					Console.WriteLine("💬🗑 Deleted Tweet.");
+					Console.WriteLine("💬🚮 Deleted Tweet.");
 				}
 			}
 			catch (TwitterException e)
 			{
-				Console.WriteLine("An error occurred trying to delete this tweet.");
-				Console.WriteLine(e);
-				return;
+				Console.WriteLine("An error occurred trying to delete this tweet:");
+				if (HandleTwitterException(e, tweet.Id))
+					return;
 			}
 		}
 
@@ -186,14 +214,8 @@ internal class Deleter
 			}
 			catch (TwitterException e)
 			{
-				if (e.StatusCode == 429)
-				{
-					Console.WriteLine("⚠️ Too many requests! Please wait a bit before running this tool again.");
+				if (HandleTwitterException(e, tweetID))
 					return;
-				}
-
-				Console.WriteLine(e);
-				Console.WriteLine($"{tweetID}: ❌ Not found");
 			}
 		}
 
@@ -226,12 +248,12 @@ internal class Deleter
 				if (tweet.IsRetweet)
 				{
 					await tweet.DestroyRetweetAsync();
-					Console.WriteLine("🔁🗑 Deleted Retweet.");
+					Console.WriteLine("🔁🚮 Deleted Retweet.");
 				}
 				else
 				{
 					await tweet.DestroyAsync();
-					Console.WriteLine("💬🗑 Deleted Tweet.");
+					Console.WriteLine("💬🚮 Deleted Tweet.");
 				}
 
 				deletedTweets++;
@@ -239,8 +261,8 @@ internal class Deleter
 			catch (TwitterException e)
 			{
 				Console.WriteLine("An error occurred trying to delete this tweet:");
-				Console.WriteLine(e);
-				return;
+				if (HandleTwitterException(e, tweet.Id))
+					return;
 			}
 		}
 
