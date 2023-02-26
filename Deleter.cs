@@ -1,4 +1,5 @@
-﻿using Tweetinvi;
+﻿using System.Diagnostics;
+using Tweetinvi;
 using Tweetinvi.Core.Exceptions;
 using Tweetinvi.Exceptions;
 using Tweetinvi.Models;
@@ -16,6 +17,41 @@ internal class Deleter
 	{
 		var userCredentials = new TwitterCredentials(consumerKey, consumerKeySecret, accessToken, accessTokenSecret);
 		this._appClient = new TwitterClient(userCredentials);
+	}
+
+	public static async Task<ITwitterCredentials> AuthenticateViaPIN(string consumerKey, string consumerKeySecret)
+	{
+		Console.WriteLine("Requesting authentication URL…");
+		var appClient = new TwitterClient(consumerKey, consumerKeySecret);
+
+		IAuthenticationRequest authRequest;
+		try
+		{
+			authRequest = await appClient.Auth.RequestAuthenticationUrlAsync();
+
+			Console.WriteLine($"Opening Authentication URL: {authRequest.AuthorizationURL}");
+			Process.Start(new ProcessStartInfo(authRequest.AuthorizationURL) { UseShellExecute = true });
+		}
+		catch (TwitterException e)
+		{
+			Console.WriteLine("An error occurred trying to retrieve an authentication URL for PIN-based OAuth.");
+			throw;
+		}
+
+		var pin = InputStuff.InputString("Please enter the PIN and hit Enter:");
+
+		ITwitterCredentials credentials;
+		try
+		{
+			credentials = await appClient.Auth.RequestCredentialsFromVerifierCodeAsync(pin, authRequest);
+		}
+		catch (TwitterException e)
+		{
+			Console.WriteLine("An error occurred trying to retrieve user credentials.");
+			throw;
+		}
+
+		return credentials;
 	}
 
 	public async Task Authenticate()

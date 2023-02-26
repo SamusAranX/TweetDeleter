@@ -2,7 +2,7 @@
 
 public static class InputStuff
 {
-	public static string InputString(string prompt = "")
+	public static string InputString(string prompt = "", bool allowEmpty = false)
 	{
 		if (prompt.Trim() != "")
 			Console.WriteLine(prompt);
@@ -12,7 +12,7 @@ public static class InputStuff
 		do
 		{
 			inputStr = Console.ReadLine();
-			valid = inputStr != null && inputStr.Trim().Length > 0;
+			valid = (inputStr != null && inputStr.Trim().Length > 0) || allowEmpty;
 
 			if (!valid)
 				Console.WriteLine("Please enter a valid string.");

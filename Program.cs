@@ -11,51 +11,45 @@ var root = new RootCommand
 	Description = "A humble tweet deleter.",
 };
 
-var consumerKeyOption = new Option<string>(
+var consumerKeyOption = new Option<string?>(
 	"--consumer-key",
-	description: "Your API consumer key. Also called 'API key' by Twitter.",
-	getDefaultValue: () => ""
+	"Your API consumer key. Also called 'API key' by Twitter."
 );
 consumerKeyOption.AddAlias("-c");
 
-var consumerSecretOption = new Option<string>(
+var consumerSecretOption = new Option<string?>(
 	"--consumer-secret",
-	description: "Your API consumer secret. Also called 'API secret key' by Twitter.",
-	getDefaultValue: () => ""
+	"Your API consumer secret. Also called 'API secret key' by Twitter."
 );
 consumerSecretOption.AddAlias("-C");
 
-var accessTokenOption = new Option<string>(
+var accessTokenOption = new Option<string?>(
 	"--access-token",
-	description: "Your API access token.",
-	getDefaultValue: () => ""
+	"Your API access token. Omit to try PIN-based authentication."
 );
 accessTokenOption.AddAlias("-a");
 
-var accessTokenSecretOption = new Option<string>(
+var accessTokenSecretOption = new Option<string?>(
 	"--access-token-secret",
-	description: "Your API access token secret.",
-	getDefaultValue: () => ""
+	"Your API access token secret. Omit to try PIN-based authentication."
 );
 accessTokenSecretOption.AddAlias("-A");
 
-var maxTweetAgeOption = new Option<int>(
+var maxTweetAgeOption = new Option<int?>(
 	"--max-tweet-age",
-	description: "The age (in days) beyond which tweets are deleted. For instance, a value of 365 would delete all tweets older than a year. Set to 0 to delete all tweets.",
-	getDefaultValue: () => -1
+	"The age (in days) beyond which tweets are deleted. For instance, a value of 365 would delete all tweets older than a year. Set to 0 to delete all tweets."
 );
+maxTweetAgeOption.AddAlias("-M");
 
-var tweetListFileOption = new Option<string>(
+var tweetListFileOption = new Option<string?>(
 	"--tweet-list",
-	description: "A file with tweet IDs separated by newlines.",
-	getDefaultValue: () => ""
+	"A file with tweet IDs separated by newlines."
 );
 tweetListFileOption.AddAlias("-t");
 
 var onlyTweetListOption = new Option<bool>(
 	"--only-tweet-list",
-	description: "Skip the normal deletion method and only process the tweet list.",
-	getDefaultValue: () => false
+	"Skip the normal deletion method and only process the tweet list."
 );
 onlyTweetListOption.AddAlias("-T");
 
@@ -82,22 +76,31 @@ root.SetHandler(async (consumerKey, consumerKeySecret, accessToken, accessTokenS
 		Console.WriteLine(new string('-', versionString.Length));
 		Console.WriteLine();
 
-		if (consumerKey.Trim() == "")
-			consumerKey = InputStuff.InputString("Please enter your API consumer key:");
+		consumerKey ??= InputStuff.InputString("Please enter your API consumer key:");
+		consumerKeySecret ??= InputStuff.InputString("Please enter your API consumer key secret:");
+		accessToken ??= InputStuff.InputString("Please enter your API access token: (leave empty to attempt PIN authentication)", true);
+		accessTokenSecret ??= InputStuff.InputString("Please enter your API access token secret: (leave empty to attempt PIN authentication)", true);
 
-		if (consumerKeySecret.Trim() == "")
-			consumerKeySecret = InputStuff.InputString("Please enter your API consumer key secret:");
+		if (accessToken == "" || accessTokenSecret == "")
+		{
+			// this will throw in case of an error so we can just continue below
+			var credentials = await Deleter.AuthenticateViaPIN(consumerKey, consumerKeySecret);
 
-		if (accessToken.Trim() == "")
-			accessToken = InputStuff.InputString("Please enter your API access token:");
+			Console.WriteLine("Authentication successful! Please write these keys down somewhere and restart this tool using them:");
+			Console.WriteLine($"CONSUMER KEY (unchanged): {consumerKey}");
+			Console.WriteLine($"CONSUMER KEY SECRET (unchanged): {consumerKeySecret}");
+			Console.WriteLine($"ACCESS TOKEN (new): {credentials.AccessToken}");
+			Console.WriteLine($"ACCESS TOKEN SECRET (new): {credentials.AccessTokenSecret}");
 
-		if (accessTokenSecret.Trim() == "")
-			accessTokenSecret = InputStuff.InputString("Please enter your API access token secret:");
+			Console.WriteLine("Press any key to exit.");
+			Console.ReadKey(true);
+			return;
+		}
 
 		var deleter = new Deleter(consumerKey, consumerKeySecret, accessToken, accessTokenSecret);
 		await deleter.Authenticate(); // will throw if login fails
 
-		if (maxTweetAge < 0)
+		if (maxTweetAge is null or < 0)
 			maxTweetAge = InputStuff.InputInt("Please enter the maximum age (in days) of tweets that should be kept. Enter 0 to delete all tweets.", 0);
 
 		DateTime deleteBeforeDate;
@@ -108,7 +111,7 @@ root.SetHandler(async (consumerKey, consumerKeySecret, accessToken, accessTokenS
 		}
 		else
 		{
-			deleteBeforeDate = (DateTime.Now - TimeSpan.FromDays(maxTweetAge)).Date;
+			deleteBeforeDate = (DateTime.Now - TimeSpan.FromDays(Convert.ToDouble(maxTweetAge))).Date;
 			Console.WriteLine($"Selected Mode: Delete all tweets made before {deleteBeforeDate.ToShortDateString()}");
 		}
 
@@ -128,7 +131,7 @@ root.SetHandler(async (consumerKey, consumerKeySecret, accessToken, accessTokenS
 			await deleter.DeleteTweets(deleteBeforeDate, goAhead);
 		}
 
-		if (tweetIDListFile != "")
+		if (tweetIDListFile != null)
 			await deleter.DeleteTweetList(tweetIDListFile, deleteBeforeDate, goAhead);
 	},
 	consumerKeyOption, consumerSecretOption, accessTokenOption, accessTokenSecretOption, maxTweetAgeOption, tweetListFileOption, onlyTweetListOption, goAheadOption);

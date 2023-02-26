@@ -2,7 +2,15 @@
 
 ### How does it work?
 
-First, you'll need a full set of API keys. Then, grab the newest release, run it, and enter all the values it asks for. Hit Enter one final time and watch as all of your old tweets are deleted.
+First, you'll need a set of API keys.
+
+#### If you only have a consumer key/secret pair
+
+Download the newest release and run it, specifying only the keys you have. A browser window will open, asking you to log into Twitter. Log in using the account you want to delete tweets from, then copy the PIN back into the tool window. If all goes well, all four required keys will be output and the tool will exit. Write the keys down somewhere and use them when restarting the tool.
+
+#### If you have a full set of keys
+
+Download the newest release, run it, and enter all the values it asks for. Hit Enter one final time and watch as all of your old tweets are deleted.
 
 You can also put a bunch of tweet IDs into a text file, separated by newlines, and use this tool to delete *just* those tweets.
 
@@ -21,16 +29,15 @@ Usage:
   TweetDeleter [options]
 
 Options:
-  -c, --consumer-key <consumer-key>                Your API consumer key. Also called 'API key' by Twitter. []
-  -C, --consumer-secret <consumer-secret>          Your API consumer secret. Also called 'API secret key' by Twitter. []
-  -a, --access-token <access-token>                Your API access token. []
-  -A, --access-token-secret <access-token-secret>  Your API access token secret. []
-  --max-tweet-age <max-tweet-age>                  The age (in days) beyond which tweets are deleted. For instance, a
+  -c, --consumer-key <consumer-key>                Your API consumer key. Also called 'API key' by Twitter.
+  -C, --consumer-secret <consumer-secret>          Your API consumer secret. Also called 'API secret key' by Twitter.
+  -a, --access-token <access-token>                Your API access token. Omit to try PIN-based authentication.
+  -A, --access-token-secret <access-token-secret>  Your API access token secret. Omit to try PIN-based authentication.
+  -M, --max-tweet-age <max-tweet-age>              The age (in days) beyond which tweets are deleted. For instance, a
                                                    value of 365 would delete all tweets older than a year. Set to 0 to
-                                                   delete all tweets. [default: -1]
-  -t, --tweet-list <tweet-list>                    A file with tweet IDs separated by newlines. []
+                                                   delete all tweets.
+  -t, --tweet-list <tweet-list>                    A file with tweet IDs separated by newlines.
   -T, --only-tweet-list                            Skip the normal deletion method and only process the tweet list.
-                                                   [default: False]
   -y                                               Specify this to skip all 'Are you sure?' questions.
   --version                                        Show version information
   -?, -h, --help                                   Show help and usage information
