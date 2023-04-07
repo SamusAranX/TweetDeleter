@@ -1,4 +1,5 @@
 ﻿using System.CommandLine;
+using System.CommandLine.Binding;
 using System.Reflection;
 using System.Text;
 using TweetDeleter;
@@ -17,11 +18,11 @@ var consumerKeyOption = new Option<string?>(
 );
 consumerKeyOption.AddAlias("-c");
 
-var consumerSecretOption = new Option<string?>(
+var consumerKeySecretOption = new Option<string?>(
 	"--consumer-secret",
 	"Your API consumer secret. Also called 'API secret key' by Twitter."
 );
-consumerSecretOption.AddAlias("-C");
+consumerKeySecretOption.AddAlias("-C");
 
 var accessTokenOption = new Option<string?>(
 	"--access-token",
@@ -53,42 +54,48 @@ var onlyTweetListOption = new Option<bool>(
 );
 onlyTweetListOption.AddAlias("-T");
 
+var keepMediaOption = new Option<bool>(
+	"--keep-media",
+	"Don't delete tweets containing media."
+);
+keepMediaOption.AddAlias("-k");
+
 var goAheadOption = new Option<bool>(
 	"-y",
 	"Specify this to skip all 'Are you sure?' questions."
 );
 
 root.AddOption(consumerKeyOption);
-root.AddOption(consumerSecretOption);
+root.AddOption(consumerKeySecretOption);
 root.AddOption(accessTokenOption);
 root.AddOption(accessTokenSecretOption);
-root.AddOption(maxTweetAgeOption);
 
+root.AddOption(maxTweetAgeOption);
 root.AddOption(tweetListFileOption);
 root.AddOption(onlyTweetListOption);
-
+root.AddOption(keepMediaOption);
 root.AddOption(goAheadOption);
 
-root.SetHandler(async (consumerKey, consumerKeySecret, accessToken, accessTokenSecret, maxTweetAge, tweetIDListFile, onlyTweetList, goAhead) =>
+root.SetHandler(async (twitterCredentials, programOptions) =>
 	{
 		var versionString = $"TweetDeleter v{Assembly.GetEntryAssembly()!.GetName().Version}";
 		Console.WriteLine(versionString);
 		Console.WriteLine(new string('-', versionString.Length));
 		Console.WriteLine();
 
-		consumerKey ??= InputStuff.InputString("Please enter your API consumer key:");
-		consumerKeySecret ??= InputStuff.InputString("Please enter your API consumer key secret:");
-		accessToken ??= InputStuff.InputString("Please enter your API access token: (leave empty to attempt PIN authentication)", true);
-		accessTokenSecret ??= InputStuff.InputString("Please enter your API access token secret: (leave empty to attempt PIN authentication)", true);
+		twitterCredentials.ConsumerKey ??= InputStuff.InputString("Please enter your API consumer key:");
+		twitterCredentials.ConsumerKeySecret ??= InputStuff.InputString("Please enter your API consumer key secret:");
+		twitterCredentials.AccessToken ??= InputStuff.InputString("Please enter your API access token: (leave empty to attempt PIN authentication)", true);
+		twitterCredentials.AccessTokenSecret ??= InputStuff.InputString("Please enter your API access token secret: (leave empty to attempt PIN authentication)", true);
 
-		if (accessToken == "" || accessTokenSecret == "")
+		if (twitterCredentials.AccessToken == "" || twitterCredentials.AccessTokenSecret == "")
 		{
 			// this will throw in case of an error so we can just continue below
-			var credentials = await Deleter.AuthenticateViaPIN(consumerKey, consumerKeySecret);
+			var credentials = await Deleter.AuthenticateViaPIN(twitterCredentials.ConsumerKey, twitterCredentials.ConsumerKeySecret);
 
 			Console.WriteLine("Authentication successful! Please write these keys down somewhere and restart this tool using them:");
-			Console.WriteLine($"CONSUMER KEY (unchanged): {consumerKey}");
-			Console.WriteLine($"CONSUMER KEY SECRET (unchanged): {consumerKeySecret}");
+			Console.WriteLine($"CONSUMER KEY (unchanged): {twitterCredentials.ConsumerKey}");
+			Console.WriteLine($"CONSUMER KEY SECRET (unchanged): {twitterCredentials.ConsumerKeySecret}");
 			Console.WriteLine($"ACCESS TOKEN (new): {credentials.AccessToken}");
 			Console.WriteLine($"ACCESS TOKEN SECRET (new): {credentials.AccessTokenSecret}");
 
@@ -97,11 +104,19 @@ root.SetHandler(async (consumerKey, consumerKeySecret, accessToken, accessTokenS
 			return;
 		}
 
-		var deleter = new Deleter(consumerKey, consumerKeySecret, accessToken, accessTokenSecret);
+		var deleter = new Deleter(twitterCredentials);
 		await deleter.Authenticate(); // will throw if login fails
 
+		var maxTweetAge = programOptions.MaxTweetAge;
 		if (maxTweetAge is null or < 0)
 			maxTweetAge = InputStuff.InputInt("Please enter the maximum age (in days) of tweets that should be kept. Enter 0 to delete all tweets.", 0);
+
+		var keepMedia = programOptions.KeepMedia;
+		if (!keepMedia)
+		{
+			var keepMediaStr = InputStuff.InputString("Enter 'y' if you want to keep tweets containing media around.");
+			keepMedia = keepMediaStr.Equals("y", StringComparison.InvariantCultureIgnoreCase);
+		}
 
 		DateTime deleteBeforeDate;
 		if (maxTweetAge == 0)
@@ -117,6 +132,10 @@ root.SetHandler(async (consumerKey, consumerKeySecret, accessToken, accessTokenS
 
 		Console.WriteLine();
 
+		var tweetIDListFile = programOptions.TweetListFile;
+		var onlyTweetList = programOptions.OnlyTweetList;
+		var goAhead = programOptions.GoAhead;
+
 		if (!onlyTweetList)
 		{
 			if (!goAhead)
@@ -128,12 +147,13 @@ root.SetHandler(async (consumerKey, consumerKeySecret, accessToken, accessTokenS
 				Console.WriteLine();
 			}
 
-			await deleter.DeleteTweets(deleteBeforeDate, goAhead);
+			await deleter.DeleteTweets(deleteBeforeDate, keepMedia, goAhead);
 		}
 
 		if (tweetIDListFile != null)
-			await deleter.DeleteTweetList(tweetIDListFile, deleteBeforeDate, goAhead);
+			await deleter.DeleteTweetList(tweetIDListFile, deleteBeforeDate, keepMedia, goAhead);
 	},
-	consumerKeyOption, consumerSecretOption, accessTokenOption, accessTokenSecretOption, maxTweetAgeOption, tweetListFileOption, onlyTweetListOption, goAheadOption);
+	new TwitterCredentialsBinder(consumerKeyOption, consumerKeySecretOption, accessTokenOption, accessTokenSecretOption), 
+	new ProgramOptionsBinder(maxTweetAgeOption, tweetListFileOption, onlyTweetListOption, keepMediaOption, goAheadOption));
 
 return await root.InvokeAsync(args);

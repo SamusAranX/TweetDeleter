@@ -13,9 +13,14 @@ internal class Deleter
 	private bool _authenticated;
 	private IAuthenticatedUser? _authenticatedUser;
 
-	public Deleter(string consumerKey, string consumerKeySecret, string accessToken, string accessTokenSecret)
+	public Deleter(TwitterCredentials credentials)
 	{
-		var userCredentials = new TwitterCredentials(consumerKey, consumerKeySecret, accessToken, accessTokenSecret);
+		var consumerKey = credentials.ConsumerKey!;
+		var consumerKeySecret = credentials.ConsumerKeySecret!;
+		var accessToken = credentials.AccessToken!;
+		var accessTokenSecret = credentials.AccessTokenSecret!;
+
+		var userCredentials = new Tweetinvi.Models.TwitterCredentials(consumerKey, consumerKeySecret, accessToken, accessTokenSecret);
 		this._appClient = new TwitterClient(userCredentials);
 	}
 
@@ -117,7 +122,7 @@ internal class Deleter
 		return false;
 	}
 
-	public async Task DeleteTweets(DateTime deleteBeforeDate, bool goAhead)
+	public async Task DeleteTweets(DateTime deleteBeforeDate, bool keepMedia, bool goAhead)
 	{
 		if (!this._authenticated)
 			return;
@@ -175,6 +180,12 @@ internal class Deleter
 			Console.WriteLine();
 			Console.WriteLine($"{tweet.CreatedAt.LocalDateTime}: {tweet.FullText}");
 
+			if (tweet.Media.Count > 0 && keepMedia)
+			{
+				Console.WriteLine("❌ Not deleting because tweet contains media.");
+				continue;
+			}
+
 			try
 			{
 				if (tweet.IsRetweet)
@@ -199,7 +210,7 @@ internal class Deleter
 		Console.WriteLine("Deleted everything there was to delete.");
 	}
 
-	public async Task DeleteTweetList(string tweetsFile, DateTime deleteBeforeDate, bool goAhead)
+	public async Task DeleteTweetList(string tweetsFile, DateTime deleteBeforeDate, bool keepMedia, bool goAhead)
 	{
 		if (!this._authenticated)
 			return;
@@ -280,6 +291,12 @@ internal class Deleter
 			{
 				Console.WriteLine();
 				Console.WriteLine($"{tweet.CreatedAt.LocalDateTime}: {tweet.FullText}");
+
+				if (tweet.Media.Count > 0 && keepMedia)
+				{
+					Console.WriteLine("❌ Not deleting because tweet contains media.");
+					continue;
+				}
 
 				if (tweet.IsRetweet)
 				{
