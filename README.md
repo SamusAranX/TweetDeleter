@@ -38,6 +38,7 @@ Options:
                                                    delete all tweets.
   -t, --tweet-list <tweet-list>                    A file with tweet IDs separated by newlines.
   -T, --only-tweet-list                            Skip the normal deletion method and only process the tweet list.
+  -k, --keep-media                                 Don't delete tweets containing media.
   -y                                               Specify this to skip all 'Are you sure?' questions.
   --version                                        Show version information
   -?, -h, --help                                   Show help and usage information
