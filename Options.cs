@@ -45,6 +45,7 @@ internal sealed class ProgramOptions
 	public bool OnlyTweetList { get; set; }
 	public bool KeepMedia { get; set; }
 	public bool GoAhead { get; set; }
+	public bool TestTwitterAPI { get; set; }
 }
 
 internal sealed class ProgramOptionsBinder : BinderBase<ProgramOptions>
@@ -54,14 +55,16 @@ internal sealed class ProgramOptionsBinder : BinderBase<ProgramOptions>
 	private readonly Option<int?> _maxTweetAge;
 	private readonly Option<bool> _onlyTweetList;
 	private readonly Option<string?> _tweetListFile;
+	private readonly Option<bool> _testTwitterAPI;
 
-	public ProgramOptionsBinder(Option<int?> maxTweetAge, Option<string?> tweetListFile, Option<bool> onlyTweetList, Option<bool> keepMedia, Option<bool> goAhead)
+	public ProgramOptionsBinder(Option<int?> maxTweetAge, Option<string?> tweetListFile, Option<bool> onlyTweetList, Option<bool> keepMedia, Option<bool> goAhead, Option<bool> testTwitterAPI)
 	{
 		this._maxTweetAge = maxTweetAge;
 		this._tweetListFile = tweetListFile;
 		this._onlyTweetList = onlyTweetList;
 		this._keepMedia = keepMedia;
 		this._goAhead = goAhead;
+		this._testTwitterAPI = testTwitterAPI;
 	}
 
 	protected override ProgramOptions GetBoundValue(BindingContext bindingContext)
@@ -73,6 +76,7 @@ internal sealed class ProgramOptionsBinder : BinderBase<ProgramOptions>
 			OnlyTweetList = bindingContext.ParseResult.GetValueForOption(this._onlyTweetList),
 			KeepMedia = bindingContext.ParseResult.GetValueForOption(this._keepMedia),
 			GoAhead = bindingContext.ParseResult.GetValueForOption(this._goAhead),
+			TestTwitterAPI = bindingContext.ParseResult.GetValueForOption(this._testTwitterAPI),
 		};
 	}
 }

@@ -65,6 +65,11 @@ var goAheadOption = new Option<bool>(
 	"Specify this to skip all 'Are you sure?' questions."
 );
 
+var testTwitterAPIOption = new Option<bool>(
+	"--twitter",
+	"Test whether Twitter API access still works."
+);
+
 root.AddOption(consumerKeyOption);
 root.AddOption(consumerKeySecretOption);
 root.AddOption(accessTokenOption);
@@ -75,6 +80,7 @@ root.AddOption(tweetListFileOption);
 root.AddOption(onlyTweetListOption);
 root.AddOption(keepMediaOption);
 root.AddOption(goAheadOption);
+root.AddOption(testTwitterAPIOption);
 
 root.SetHandler(async (twitterCredentials, programOptions) =>
 	{
@@ -106,6 +112,12 @@ root.SetHandler(async (twitterCredentials, programOptions) =>
 
 		var deleter = new Deleter(twitterCredentials);
 		await deleter.Authenticate(); // will throw if login fails
+
+		if (programOptions.TestTwitterAPI)
+		{
+			await deleter.TestAPIAccess();
+			return;
+		}
 
 		var maxTweetAge = programOptions.MaxTweetAge;
 		if (maxTweetAge is null or < 0)
@@ -154,6 +166,6 @@ root.SetHandler(async (twitterCredentials, programOptions) =>
 			await deleter.DeleteTweetList(tweetIDListFile, deleteBeforeDate, keepMedia, goAhead);
 	},
 	new TwitterCredentialsBinder(consumerKeyOption, consumerKeySecretOption, accessTokenOption, accessTokenSecretOption), 
-	new ProgramOptionsBinder(maxTweetAgeOption, tweetListFileOption, onlyTweetListOption, keepMediaOption, goAheadOption));
+	new ProgramOptionsBinder(maxTweetAgeOption, tweetListFileOption, onlyTweetListOption, keepMediaOption, goAheadOption, testTwitterAPIOption));
 
 return await root.InvokeAsync(args);

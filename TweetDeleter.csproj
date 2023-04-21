@@ -5,7 +5,7 @@
     <TargetFramework>net7.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
-    <AssemblyVersion>1.4</AssemblyVersion>
+    <AssemblyVersion>1.4.1</AssemblyVersion>
     <FileVersion>$(AssemblyVersion)</FileVersion>
     <Title>$(AssemblyName)</Title>
     <Description>dead simple tweet deleter. bring your own api keys.</Description>

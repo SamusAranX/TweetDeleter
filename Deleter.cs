@@ -326,4 +326,49 @@ internal class Deleter
 		else
 			Console.WriteLine($"Hmm. We somehow deleted {deletedTweets} out of {tweetList.Count} tweets, which is more than were eligible for deletion. This shouldn't have happened.");
 	}
+
+	public async Task TestAPIAccess()
+	{
+		if (!this._authenticated)
+			return;
+
+		var p = new GetUserTimelineParameters(this._authenticatedUser!.ScreenName)
+		{
+			IncludeRetweets = false,
+			ExcludeReplies = false,
+		};
+
+		Console.WriteLine("Retrieving all tweets…");
+		var timelineTweets = new List<ITweet>();
+		var timelineIterator = this._appClient.Timelines.GetUserTimelineIterator(p);
+
+		while (!timelineIterator.Completed)
+		{
+			var page = await timelineIterator.NextPageAsync();
+			timelineTweets.AddRange(page);
+
+			if (timelineTweets.Count == 1)
+				Console.WriteLine("Found one tweet…");
+			else
+				Console.WriteLine($"Found {timelineTweets.Count} tweets…");
+
+			if (timelineTweets.Count >= 250)
+			{
+				Console.WriteLine("Stopping here.");
+				break;
+			}
+		}
+
+		if (timelineTweets.Count == 1)
+			Console.WriteLine("Found one tweet.");
+		else
+			Console.WriteLine($"Found a total of {timelineTweets.Count} tweets.");
+		
+		var newestTweet = timelineTweets.First();
+
+		Console.WriteLine("The most recent one was this:");
+		Console.WriteLine($"{newestTweet.CreatedAt.LocalDateTime}: {newestTweet.FullText}");
+
+		Console.WriteLine("Congrats, Twitter API access still works.");
+	}
 }
