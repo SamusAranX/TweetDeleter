@@ -68,6 +68,15 @@ internal class Deleter
 			this._authenticatedUser = await this._appClient.Users.GetAuthenticatedUserAsync();
 			Console.WriteLine($"Authenticated as {this._authenticatedUser.ScreenName}");
 		}
+		catch (TwitterException e)
+		{
+			if (e.StatusCode == 401)
+			{
+				Console.WriteLine("Couldn't authenticate. Please check whether the API is still online and if so, make sure your API keys are correct.");
+			}
+			Console.WriteLine(e);
+			throw;
+		}
 		catch (TwitterAuthException e)
 		{
 			Console.WriteLine("Couldn't authenticate. Please check whether the API is still online and if so, make sure your API keys are correct.");
