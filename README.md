@@ -2,6 +2,8 @@
 
 ### How does it work?
 
+**Update (08/2023):** Seems Twitter finally killed the delete endpoint for good. This app will no longer work unless someone figures out a way to abuse the official app API.
+
 First, you'll need a set of API keys.
 
 #### If you only have a consumer key/secret pair
